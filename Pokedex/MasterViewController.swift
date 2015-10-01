@@ -17,11 +17,101 @@ class MasterViewController: UITableViewController, NSFetchedResultsControllerDel
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        // Do any additional setup after loading the view, typically from a nib.
-        self.navigationItem.leftBarButtonItem = self.editButtonItem()
-
-        let addButton = UIBarButtonItem(barButtonSystemItem: .Add, target: self, action: "insertNewObject:")
-        self.navigationItem.rightBarButtonItem = addButton
+        
+        let appDel:AppDelegate = UIApplication.sharedApplication().delegate as! AppDelegate
+        let context: NSManagedObjectContext = appDel.managedObjectContext
+        
+        let url = NSURL(string:"http://pokeapi.co/api/v1/pokemon/?limit=5")
+        
+        let session = NSURLSession.sharedSession()
+        
+        let task = session.dataTaskWithURL(url!) { (data, response, error) -> Void in
+            
+            if error == nil {
+                
+                if let content = data {
+                    
+                    do {
+                        
+                        let jsonResult =  try NSJSONSerialization.JSONObjectWithData(content, options: NSJSONReadingOptions.MutableContainers) as! NSDictionary
+                    
+                        print("Result \(jsonResult)")
+                        
+                        if jsonResult.count > 0 {
+                            if let pokemons = jsonResult["objects"] as? NSArray {
+                                
+                                let request = NSFetchRequest(entityName: "Pokemons")
+                                
+                                request.returnsObjectsAsFaults = false
+                                
+                                do {
+                                    let results = try context.executeFetchRequest(request)
+                                    
+                                    if results.count > 0 {
+                                        for result in results {
+                                            
+                                            context.deleteObject(result as! NSManagedObject)
+                                            
+                                            do {
+                                                
+                                                try context.save()
+                                                
+                                            } catch {}
+                                            
+                                        }
+                                    }
+                                } catch {}
+                                
+                                for pokemon in pokemons {
+                                    
+                                    
+                                    let newPokemon: NSManagedObject = NSEntityDescription.insertNewObjectForEntityForName("Pokemons", inManagedObjectContext: context)
+                                    
+                                    newPokemon.setValue(pokemon["name"], forKey: "name")
+                                    newPokemon.setValue(pokemon["national_id"], forKey: "national_id")
+                                    newPokemon.setValue(pokemon["pkdx_id"], forKey: "pkdx_id")
+                                    newPokemon.setValue(pokemon["resource_uri"], forKey: "resource_uri")
+                                    
+                                    newPokemon.setValue(pokemon["attack"], forKey: "attack")
+                                    newPokemon.setValue(pokemon["defense"], forKey: "defense")
+                                    newPokemon.setValue(pokemon["hp"], forKey: "hp")
+                                    newPokemon.setValue(pokemon["exp"], forKey: "exp")
+                                    newPokemon.setValue(pokemon["catch_rate"], forKey: "catch_rate")
+                                    newPokemon.setValue(pokemon["speed"], forKey: "speed")
+                                    newPokemon.setValue(pokemon["sp_atk"], forKey: "sp_atk")
+                                    newPokemon.setValue(pokemon["sp_def"], forKey: "sp_def")
+                                    
+                                    
+                                }
+                                
+                                print("Pokemons \(pokemons)")
+                                
+                                /*let name = pokemons["name"]
+                                let attack = pokemons["attack"]
+                                let defense = pokemons["defense"]
+                                let name = pokemons["name"]
+                                let name = pokemons["name"]
+                                let name = pokemons["name"]
+                                */
+                            }
+                        }
+                        
+                        
+                        
+                    } catch {
+                        print("Data not available")
+                    }
+                    
+                }
+                
+            } else {
+                print("Error: \(error)")
+            }
+            
+        }
+        
+        task.resume()
+        
         if let split = self.splitViewController {
             let controllers = split.viewControllers
             self.detailViewController = (controllers[controllers.count-1] as! UINavigationController).topViewController as? DetailViewController
@@ -45,7 +135,7 @@ class MasterViewController: UITableViewController, NSFetchedResultsControllerDel
              
         // If appropriate, configure the new managed object.
         // Normally you should use accessor methods, but using KVC here avoids the need to add a custom class to the template.
-        newManagedObject.setValue(NSDate(), forKey: "timeStamp")
+        newManagedObject.setValue(NSDate(), forKey: "name")
              
         // Save the context.
         do {
@@ -112,7 +202,7 @@ class MasterViewController: UITableViewController, NSFetchedResultsControllerDel
 
     func configureCell(cell: UITableViewCell, atIndexPath indexPath: NSIndexPath) {
         let object = self.fetchedResultsController.objectAtIndexPath(indexPath)
-        cell.textLabel!.text = object.valueForKey("timeStamp")!.description
+        cell.textLabel!.text = object.valueForKey("name")!.description
     }
 
     // MARK: - Fetched results controller
@@ -124,14 +214,14 @@ class MasterViewController: UITableViewController, NSFetchedResultsControllerDel
         
         let fetchRequest = NSFetchRequest()
         // Edit the entity name as appropriate.
-        let entity = NSEntityDescription.entityForName("Event", inManagedObjectContext: self.managedObjectContext!)
+        let entity = NSEntityDescription.entityForName("Pokemons", inManagedObjectContext: self.managedObjectContext!)
         fetchRequest.entity = entity
         
         // Set the batch size to a suitable number.
         fetchRequest.fetchBatchSize = 20
         
         // Edit the sort key as appropriate.
-        let sortDescriptor = NSSortDescriptor(key: "timeStamp", ascending: false)
+        let sortDescriptor = NSSortDescriptor(key: "national_id", ascending: true)
         
         fetchRequest.sortDescriptors = [sortDescriptor]
         
