@@ -67,6 +67,7 @@ class MasterViewController: UITableViewController, NSFetchedResultsControllerDel
                                     
                                     let newPokemon: NSManagedObject = NSEntityDescription.insertNewObjectForEntityForName("Pokemons", inManagedObjectContext: context)
                                     
+                                    print(pokemon["name"])
                                     newPokemon.setValue(pokemon["name"], forKey: "name")
                                     newPokemon.setValue(pokemon["national_id"], forKey: "national_id")
                                     newPokemon.setValue(pokemon["pkdx_id"], forKey: "pkdx_id")
@@ -81,18 +82,13 @@ class MasterViewController: UITableViewController, NSFetchedResultsControllerDel
                                     newPokemon.setValue(pokemon["sp_atk"], forKey: "sp_atk")
                                     newPokemon.setValue(pokemon["sp_def"], forKey: "sp_def")
                                     
+                                    let sprites = pokemon["sprites"] as! NSArray
+                                    print(sprites)
+                                    print(sprites[0]["resource_uri"])
+                                    newPokemon.setValue(sprites[0]["resource_uri"], forKey: "sprite")
+                                    
                                     
                                 }
-                                
-                                print("Pokemons \(pokemons)")
-                                
-                                /*let name = pokemons["name"]
-                                let attack = pokemons["attack"]
-                                let defense = pokemons["defense"]
-                                let name = pokemons["name"]
-                                let name = pokemons["name"]
-                                let name = pokemons["name"]
-                                */
                             }
                         }
                         

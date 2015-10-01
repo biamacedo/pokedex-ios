@@ -203,6 +203,7 @@
                         <outlet property="exp" destination="7zf-QQ-QMv" id="n73-aZ-Yf1"/>
                         <outlet property="hp" destination="xDF-36-CuB" id="42W-n5-DPy"/>
                         <outlet property="ids" destination="49F-xH-jnI" id="U4F-TW-f9G"/>
+                        <outlet property="image" destination="Bwt-pw-Gws" id="KUe-rz-WOk"/>
                         <outlet property="name" destination="7kC-Z0-5Of" id="dp3-Td-cWE"/>
                         <outlet property="specialAttack" destination="Por-oV-naS" id="iCH-P3-p7t"/>
                         <outlet property="specialDefense" destination="a7X-VE-IOy" id="5Xz-nd-3Sz"/>

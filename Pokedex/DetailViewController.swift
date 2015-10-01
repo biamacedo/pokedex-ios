@@ -22,6 +22,7 @@ class DetailViewController: UIViewController {
     @IBOutlet weak var speed: UILabel!
     @IBOutlet weak var specialAttack: UILabel!
     @IBOutlet weak var specialDefense: UILabel!
+    @IBOutlet weak var image: UIImageView!
     
     
     var detailItem: AnyObject? {
@@ -65,7 +66,92 @@ class DetailViewController: UIViewController {
             if let specialDefenseLabel = self.specialDefense {
                 specialDefenseLabel.text = detail.valueForKey("sp_def")!.description
             }
+            
+            getImageFromSprite(detail.valueForKey("sprite")!.description)
+            
         }
+    }
+    
+    func getImageFromSprite(spriteUrl: String){
+        
+        let url = NSURL(string:"http://pokeapi.co\(spriteUrl)")
+        
+        let session = NSURLSession.sharedSession()
+        
+        let task = session.dataTaskWithURL(url!) { (data, response, error) -> Void in
+            
+            if error == nil {
+                
+                if let content = data {
+                    
+                    do {
+                        
+                        let sprite =  try NSJSONSerialization.JSONObjectWithData(content, options: NSJSONReadingOptions.MutableContainers) as! NSDictionary
+                        
+                        if sprite.count > 0 {
+                                    
+                            print(sprite["image"])
+                            
+                            self.retrieveImage(sprite["image"] as! String)
+                            
+                        }
+                    } catch {
+                        print("Data not available")
+                    }
+                }
+            } else {
+                print("Error: \(error)")
+            }
+        }
+        
+        task.resume()
+
+    }
+    
+    func retrieveImage(imageUri: String){
+        
+        let resourceUri = NSURL(string: "http://pokeapi.co\(imageUri)")
+        
+        let session = NSURLSession.sharedSession()
+        
+        let task = session.dataTaskWithURL(resourceUri!) { (data, response, error) -> Void in
+            
+            if error == nil {
+                
+                if let pokemonImage = UIImage(data: data!) {
+                    
+                    // New Thread
+                    dispatch_async(dispatch_get_main_queue()) { () -> Void in
+                        
+                        self.image.image = pokemonImage
+                        
+                        var documentsDirectory: String?
+                        
+                        var paths:[AnyObject] = NSSearchPathForDirectoriesInDomains(NSSearchPathDirectory.DocumentDirectory, NSSearchPathDomainMask.UserDomainMask, true)
+                        
+                        if paths.count > 0 {
+                            documentsDirectory = paths[0] as? String
+                            
+                            let apiPartToRemove = "/media/img/"
+                            
+                            let pokemonImgId = imageUri.stringByReplacingOccurrencesOfString(apiPartToRemove, withString: "")
+                            
+                            let savePath = documentsDirectory! + "\(pokemonImgId).png"
+                            
+                            NSFileManager.defaultManager().createFileAtPath(savePath, contents: data, attributes: nil)
+                            
+                            self.image.image = UIImage(named: savePath)
+                            
+                        }
+                    }
+                }
+                
+            } else {
+                print(error)
+            }
+            
+        }
+        task.resume()
     }
 
     override func viewDidLoad() {
