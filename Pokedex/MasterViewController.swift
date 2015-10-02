@@ -21,7 +21,7 @@ class MasterViewController: UITableViewController, NSFetchedResultsControllerDel
         let appDel:AppDelegate = UIApplication.sharedApplication().delegate as! AppDelegate
         let context: NSManagedObjectContext = appDel.managedObjectContext
         
-        let url = NSURL(string:"http://pokeapi.co/api/v1/pokemon/?limit=20")
+        let url = NSURL(string:"http://pokeapi.co/api/v1/pokemon/?limit=5")
         
         let session = NSURLSession.sharedSession()
         
