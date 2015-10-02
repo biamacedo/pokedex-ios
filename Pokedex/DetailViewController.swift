@@ -9,9 +9,9 @@
 import UIKit
 
 class DetailViewController: UIViewController {
-
+    
     @IBOutlet weak var detailDescriptionLabel: UILabel!
-
+    
     @IBOutlet weak var name: UILabel!
     @IBOutlet weak var ids: UILabel!
     @IBOutlet weak var hp: UILabel!
@@ -28,10 +28,10 @@ class DetailViewController: UIViewController {
     var detailItem: AnyObject? {
         didSet {
             // Update the view.
-            self.configureView()
+            //self.configureView()
         }
     }
-
+    
     func configureView() {
         // Update the user interface for the detail item.
         if let detail = self.detailItem {
@@ -84,19 +84,22 @@ class DetailViewController: UIViewController {
                 
                 if let content = data {
                     
-                    do {
-                        
-                        let sprite =  try NSJSONSerialization.JSONObjectWithData(content, options: NSJSONReadingOptions.MutableContainers) as! NSDictionary
-                        
-                        if sprite.count > 0 {
-                                    
-                            print(sprite["image"])
+                    // New Thread
+                    dispatch_async(dispatch_get_main_queue()) { () -> Void in
+                        do {
                             
-                            self.retrieveImage(sprite["image"] as! String)
                             
+                            let sprite =  try NSJSONSerialization.JSONObjectWithData(content, options: NSJSONReadingOptions.MutableContainers) as! NSDictionary
+                            
+                            if sprite.count > 0 {
+                                
+                                //print(sprite["image"])
+                                self.retrieveImage(sprite["image"] as! String)
+                                
+                            }
+                        } catch {
+                            print("Data not available")
                         }
-                    } catch {
-                        print("Data not available")
                     }
                 }
             } else {
@@ -105,66 +108,85 @@ class DetailViewController: UIViewController {
         }
         
         task.resume()
-
+        
     }
     
     func retrieveImage(imageUri: String){
         
-        let resourceUri = NSURL(string: "http://pokeapi.co\(imageUri)")
+        let apiPartToRemove = "/media/img/"
+        let pokemonImgId = imageUri.stringByReplacingOccurrencesOfString(apiPartToRemove, withString: "")
         
-        let session = NSURLSession.sharedSession()
+        var documentsDirectory: String?
         
-        let task = session.dataTaskWithURL(resourceUri!) { (data, response, error) -> Void in
+        var paths:[AnyObject] = NSSearchPathForDirectoriesInDomains(NSSearchPathDirectory.DocumentDirectory, NSSearchPathDomainMask.UserDomainMask, true)
+        
+        if paths.count > 0 {
+            documentsDirectory = paths[0] as? String
             
-            if error == nil {
-                
-                if let pokemonImage = UIImage(data: data!) {
-                    
-                    // New Thread
-                    dispatch_async(dispatch_get_main_queue()) { () -> Void in
-                        
-                        self.image.image = pokemonImage
-                        
-                        var documentsDirectory: String?
-                        
-                        var paths:[AnyObject] = NSSearchPathForDirectoriesInDomains(NSSearchPathDirectory.DocumentDirectory, NSSearchPathDomainMask.UserDomainMask, true)
-                        
-                        if paths.count > 0 {
-                            documentsDirectory = paths[0] as? String
-                            
-                            let apiPartToRemove = "/media/img/"
-                            
-                            let pokemonImgId = imageUri.stringByReplacingOccurrencesOfString(apiPartToRemove, withString: "")
-                            
-                            let savePath = documentsDirectory! + "\(pokemonImgId).png"
-                            
-                            NSFileManager.defaultManager().createFileAtPath(savePath, contents: data, attributes: nil)
-                            
-                            self.image.image = UIImage(named: savePath)
-                            
-                        }
-                    }
+            let savePath = documentsDirectory! + "/pokemon_\(pokemonImgId)"
+            //print(savePath)
+            
+            // First checking ig image was cached
+            if NSFileManager.defaultManager().fileExistsAtPath(savePath) {
+                print("Used Image From Cache")
+                if let pokemonImage = self.image {
+                    pokemonImage.image = UIImage(named: savePath)
                 }
-                
             } else {
-                print(error)
+                
+                print("Image Not on Cache, Retrieving From API")
+                let resourceUri = NSURL(string: "http://pokeapi.co\(imageUri)")
+                
+                let session = NSURLSession.sharedSession()
+                
+                let task = session.dataTaskWithURL(resourceUri!) { (data, response, error) -> Void in
+                    
+                    if error == nil {
+                        
+                        if let pokemonImage = UIImage(data: data!) {
+                            
+                            // New Thread
+                            dispatch_async(dispatch_get_main_queue()) { () -> Void in
+                                
+                                // Showing photo retrieved
+                                self.image.image = pokemonImage
+                                
+                                // Saving Photo
+                                if paths.count > 0 {
+                                    documentsDirectory = paths[0] as? String
+                                    
+                                    NSFileManager.defaultManager().createFileAtPath(savePath, contents: data, attributes: nil)
+                                }
+                            }
+                        }
+                        
+                    } else {
+                        print(error)
+                    }
+                    
+                }
+                task.resume()
+                
             }
-            
         }
-        task.resume()
+        
+        
     }
-
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
+    }
+    
+    override func viewWillAppear(animated: Bool) {
         self.configureView()
     }
-
+    
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
         // Dispose of any resources that can be recreated.
     }
-
-
+    
+    
 }
 
